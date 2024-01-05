@@ -22,7 +22,7 @@ Este é um script em shell desenvolvido para facilitar a instalação, configura
 ## Como Usar
 Certifique-se de ter permissões de administrador para executar o script. Utilize o seguinte comando para iniciar a instalação:
 ```bash
-sudo bash vsftpd_manager_pt_br
+sudo bash vsftpd_manager.sh
 ```
 **ou**
 
