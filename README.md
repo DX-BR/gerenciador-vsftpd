@@ -27,6 +27,6 @@ sudo bash vsftpd_manager_pt_br
 **ou**
 
 ```bash
-bash <(wget -qO- https://raw.githubusercontent.com/DX-BR/gerenciador-de-vsftpd/main/pt-br/vsftpd_manager_pt_br.sh)
+bash <(wget -qO- https://raw.githubusercontent.com/DX-BR/gerenciador-de-vsftpd/main/pt-br/vsftpd_manager.sh)
 ```
 Este script visa simplificar a administração do VSFTPD, proporcionando uma experiência intuitiva e eficiente para usuários do Ubuntu 20.04. Sinta-se à vontade para contribuir, relatar problemas ou personalizar conforme suas necessidades.
