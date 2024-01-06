@@ -1,10 +1,10 @@
 #!/bin/bash
 
-[[ "$(whoami)" != "root" ]] && {
+if [[ "$(whoami)" != "root" ]]; then
     clear
-    echo -e "\033[1;31mYou need to be the root user. Please run as root: \033[1;32m(\033[1;33msudo -i\033[1;32m)\033[0m"
-    exit
-}
+    echo -e "${RED}Execute the script as root (${YELLOW}sudo -i${RED}).${NC}"
+    exit 1
+fi
 
 # Define colors using ANSI escape codes
 GREEN='\033[0;32m'
@@ -18,7 +18,7 @@ userlist_file="/etc/vsftpd.userlist"
 
 # Function to install vsftpd
 install_vsftpd() {
-    # Update the package list
+    # Update package list
     apt update
 
     # Install vsftpd and OpenSSL
@@ -54,12 +54,12 @@ pam_service_name=vsftpd
 rsa_cert_file=/etc/ssl/certs/vsftpd.pem
 rsa_private_key_file=/etc/ssl/private/vsftpd.pem
 
-# Restrict access to local users
+# Limit access to local users
 userlist_enable=YES
 userlist_file=/etc/vsftpd.userlist
 userlist_deny=NO
 
-# Limit the number of connections
+# Limit number of connections
 max_clients=50
 max_per_ip=5
 
@@ -82,7 +82,7 @@ EOF
 # Function to add a new user
 add_user() {
     read -p "Enter the new username: " username
-    read -s -p "Enter the password for the new user: " password
+    read -s -r -p "Enter the password for the new user: " password
 
     # Check if the user already exists
     if id "$username" >/dev/null 2>&1; then
@@ -102,7 +102,7 @@ add_user() {
     mkdir -p "$user_home/ftp"
     chmod 755 "$user_home/ftp"
 
-    # Adjust permissions for the user's root directory to make it non-writable
+    # Adjust permissions of the user's root directory to make it non-writable
     chmod a-w "$user_home"
 
     # Add the user to the temporary file
@@ -111,13 +111,21 @@ add_user() {
     echo -e "${GREEN}New user created: $username${NC}"
 }
 
-# Function to open the necessary ports in the firewall
+# Function to open necessary ports in the firewall
 open_firewall_ports() {
-    # Open necessary ports for vsftpd
-    ufw allow 21/tcp
-    ufw allow 990/tcp
-    ufw allow 40000:40100/tcp  # Ports used in passive mode (adjust as needed)
-    ufw --force enable  # Enable the firewall
+    # Check if ufw is installed
+    if command -v ufw >/dev/null 2>&1; then
+
+        # Open necessary ports for vsftpd
+        ufw allow 21/tcp
+        ufw allow 22/tcp
+        ufw allow 990/tcp
+        ufw allow 40000:40100/tcp  # Ports used in passive mode (adjust as needed)
+        ufw --force enable  # Enable the firewall
+        echo -e "${GREEN}Firewall ports opened successfully.${NC}"
+    else
+        echo -e "${RED}UFW not installed. Ports cannot be opened.${NC}"
+    fi
 }
 
 # Function to remove an existing user
@@ -137,13 +145,13 @@ remove_user() {
         echo "User $username does not exist."
     fi
 
-    # Remove the user from the temporary file if present
+    # Remove the user from the temporary file, if present
     [ -e "$temp_users_file" ] && sed -i "/$username/d" "$temp_users_file"
 }
 
-# Function to remove everything (users and the program entirely)
+# Function to remove everything (users and the program completely)
 remove_all() {
-    # Read the temporary file and remove the listed users
+    # Read the temporary file and remove listed users
     while IFS= read -r username; do
         remove_user "$username"
     done < "$temp_users_file"
@@ -156,7 +164,7 @@ remove_all() {
     # Remove the userlist file
     rm -f "$userlist_file"
 
-    # Remove the temporary file if it exists
+    # Remove the temporary file, if it exists
     [ -e "$temp_users_file" ] && rm -f "$temp_users_file"
 
     systemctl restart vsftpd
@@ -190,7 +198,7 @@ change_write_permission() {
     read -p "Enter the username: " username
 
     if id "$username" >/dev/null 2>&1; then
-        read -p "Do you want to allow write permission for user $username? (1 for yes, 2 for no): " choice
+        read -p "Allow write permission for user $username? (1 for yes, 2 for no): " choice
         if [ "$choice" -eq 1 ]; then
             chmod +w "/home/$username/ftp"
             sudo chmod 1777 "/home/$username/ftp"
@@ -212,7 +220,7 @@ change_read_permission() {
     read -p "Enter the username: " username
 
     if id "$username" >/dev/null 2>&1; then
-        read -p "Do you want to allow read permission for user $username? (1 for yes, 2 for no): " choice
+        read -p "Allow read permission for user $username? (1 for yes, 2 for no): " choice
         if [ "$choice" -eq 1 ]; then
             chmod +r "/home/$username/ftp"
             echo "Read permission granted for user $username."
@@ -227,14 +235,14 @@ change_read_permission() {
     fi
 }
 
-# Options menu
+# Menu options
 while true; do
     echo -e "${YELLOW}Choose an option:${NC}"
     echo -e "${YELLOW}1. Install vsftpd${NC}"
     echo -e "${YELLOW}2. Add a new user${NC}"
     echo -e "${YELLOW}3. Remove an existing user${NC}"
     echo -e "${YELLOW}4. Change user permissions${NC}"
-    echo -e "${YELLOW}5. Remove everything (users and the program entirely)${NC}"
+    echo -e "${YELLOW}5. Remove everything (users and the program completely)${NC}"
     echo -e "${YELLOW}6. Open firewall ports${NC}"
     echo -e "${YELLOW}7. Exit${NC}"
 
