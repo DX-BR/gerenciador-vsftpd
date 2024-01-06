@@ -1,10 +1,10 @@
 #!/bin/bash
 
-[[ "$(whoami)" != "root" ]] && {
-	clear
-	echo -e "\033[1;31me lá vamos nós, usuário root, \033[1;32m(\033[1;33msudo -i\033[1;32m)\033[0m"
-	exit
-}
+if [[ "$(whoami)" != "root" ]]; then
+    clear
+    echo -e "${RED}Execute o script como root (${YELLOW}sudo -i${RED}).${NC}"
+    exit 1
+fi
 
 # Define cores usando códigos de escape ANSI
 GREEN='\033[0;32m'
@@ -83,7 +83,7 @@ EOF
 # Função para adicionar um novo usuário
 add_user() {
     read -p "Digite o nome do novo usuário: " username
-    read -s -p "Digite a senha para o novo usuário: " password
+    read -s -r -p "Digite a senha para o novo usuário: " password
 
     # Verifica se o usuário já existe
     if id "$username" >/dev/null 2>&1; then
@@ -114,11 +114,19 @@ add_user() {
 
 # Função para abrir as portas necessárias no firewall
 open_firewall_ports() {
+        # ufw está instalado
+    if command -v ufw >/dev/null 2>&1; then
+
     # Abre as portas necessárias para o vsftpd
     ufw allow 21/tcp
+    ufw allow 22/tcp
     ufw allow 990/tcp
     ufw allow 40000:40100/tcp  # Portas usadas no modo passivo (ajuste conforme necessário)
     ufw --force enable  # Ativa o firewall
+    echo -e "${GREEN}Portas no firewall abertas com sucesso.${NC}"
+else
+    echo -e "${RED}UFW não instalado. As portas não podem ser abertas.${NC}"
+fi
 }
 
 # Função para remover um usuário existente
